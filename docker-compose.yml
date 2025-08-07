@@ -10,8 +10,8 @@ services:
     depends_on:
       - nl-query
       - query-engine
-    env_file:
-      - .env
+    environment:
+      - FASTAPI_ENV=development
 
   nl-query:
     build:
@@ -19,8 +19,9 @@ services:
     container_name: nl-query
     ports:
       - "8001:8001"
-    env_file:
-      - .env
+    environment:
+      - FASTAPI_ENV=development
+      - OPENAI_API_KEY=${OPENAI_API_KEY}  # variável vinda do .env
 
   query-engine:
     build:
@@ -30,5 +31,18 @@ services:
       - "8002:8002"
     volumes:
       - ../query-engine/data:/app/data
-    env_file:
-      - .env
+
+  interface-web:
+    build:
+      context: ../interface-web
+    container_name: interface-web
+    ports:
+      - "3000:3000"
+    depends_on:
+      - orchestrator-api
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000  # ou ajuste para rede Docker
+
+networks:
+  default:
+    driver: bridge
