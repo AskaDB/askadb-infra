@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   orchestrator-api:
     build:
@@ -31,17 +29,6 @@ services:
       - "8002:8002"
     volumes:
       - ../query-engine/data:/app/data
-
-  interface-web:
-    build:
-      context: ../interface-web
-    container_name: interface-web
-    ports:
-      - "3000:3000"
-    depends_on:
-      - orchestrator-api
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000  # ou ajuste para rede Docker
 
 networks:
   default:

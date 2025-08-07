@@ -1,0 +1,51 @@
+# .gitignore — infra/
+
+# Evita versionar variáveis sensíveis
+.env
+*.env
+
+# Docker
+**/__pycache__/
+**/*.py[cod]
+**/*.log
+
+# Arquivos temporários do Docker
+**/Dockerfile~
+**/docker-compose.override.yml
+**/.docker
+
+# VSCode & IDEs
+.vscode/
+.idea/
+
+# Logs e arquivos temporários
+*.log
+*.bak
+*.swp
+*.tmp
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Arquivos de build e cache
+infra/__pycache__/
+infra/.pytest_cache/
+infra/.mypy_cache/
+infra/.venv/
+infra/venv/
+infra/.envrc
+
+# Arquivos gerados automaticamente
+*.pid
+*.sock
+
+# Outros arquivos que você pode querer ignorar
+*.tar
+*.gz
+*.zip
+
+# Excluir arquivos de cache dos serviços
+**/node_modules/
+**/dist/
+**/build/
