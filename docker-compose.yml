@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  orchestrator-api:
+    build:
+      context: ../orchestrator-api
+    container_name: orchestrator-api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - nl-query
+      - query-engine
+    env_file:
+      - .env
+
+  nl-query:
+    build:
+      context: ../nl-query
+    container_name: nl-query
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+
+  query-engine:
+    build:
+      context: ../query-engine
+    container_name: query-engine
+    ports:
+      - "8002:8002"
+    volumes:
+      - ../query-engine/data:/app/data
+    env_file:
+      - .env
