@@ -1,6 +1,11 @@
 # Caminho para o docker-compose
 DC=docker-compose
 
+# Use bash em um único shell por receita
+SHELL := /bin/bash
+.ONESHELL:
+.SHELLFLAGS := -o pipefail -c
+
 # =============================================================================
 # COMANDOS PRINCIPAIS
 # =============================================================================
@@ -146,5 +151,84 @@ help:
 	@echo "  clean           - Limpar containers parados, redes e volumes"
 	@echo "  clean-askadb    - Limpar apenas containers do askadb (orquestrador central)"
 	@echo ""
-	@echo "AJUDA:"
-	@echo "  help            - Mostrar esta ajuda"
+	@echo "GIT (multi-repo):"
+	@echo "  status-all      - Mostra status/resumo de mudanças em todos os repos"
+	@echo "  push-all        - git add/commit/push em todos os repos (MSG=\"...\")"
+	@echo "  push-all-dry    - Dry-run do push-all (sem executar)"
+
+# =============================================================================
+# GIT - COMMIT & PUSH EM TODOS OS REPOS
+# =============================================================================
+
+# Diretório base (os repos ficam como irmãos do askadb-infra)
+BASE_DIR := ..
+# Liste aqui os repositórios que quer varrer
+REPOS := \
+  $(BASE_DIR)/askadb-ai-agent-sdk \
+  $(BASE_DIR)/askadb-dashboard-core \
+  $(BASE_DIR)/askadb-docs \
+  $(BASE_DIR)/askadb-infra \
+  $(BASE_DIR)/askadb-nl-query \
+  $(BASE_DIR)/askadb-orchestrator-api \
+  $(BASE_DIR)/askadb-pipeline-ingest \
+  $(BASE_DIR)/askadb-query-engine \
+  $(BASE_DIR)/askadb-ui
+
+# Mensagem de commit (pode sobrescrever com MSG="...")
+MSG ?= subindo ajustes
+# Branch default caso HEAD esteja destacado e não haja main/master
+DEFAULT_BRANCH ?= main
+
+status-all:
+	for repo in $(REPOS); do \
+	  if [ -d "$$repo/.git" ]; then \
+	    echo "===== $$repo ====="; \
+	    cd "$$repo"; \
+	    echo "Branch: $$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '(detached)')"; \
+	    git status --short --branch || true; \
+	    cd - >/dev/null 2>&1 || true; \
+	  else echo "Pulando $$repo (não é repo git)"; fi; \
+	done
+
+push-all:
+	set -euo pipefail
+	for repo in $(REPOS); do \
+	  if [ -d "$$repo/.git" ]; then \
+	    echo "===== $$repo ====="; \
+	    cd "$$repo"; \
+	    branch=$$(git symbolic-ref --short -q HEAD || true); \
+	    if [ -z "$$branch" ]; then \
+	      if git show-ref --verify --quiet refs/heads/main; then branch=main; \
+	      elif git show-ref --verify --quiet refs/heads/master; then branch=master; \
+	      else branch=$(DEFAULT_BRANCH); git checkout -b "$$branch" || git checkout "$$branch"; fi; \
+	    fi; \
+	    git checkout "$$branch" >/dev/null 2>&1 || true; \
+	    if git remote get-url origin >/dev/null 2>&1; then :; else echo "(sem remote origin)"; fi; \
+	    git fetch --all --prune >/dev/null 2>&1 || true; \
+	    if [ -d .git/rebase-apply ] || [ -d .git/rebase-merge ]; then git rebase --abort || true; fi; \
+	    untracked=$$(git ls-files --others --exclude-standard | wc -l | tr -d ' '); \
+	    if ! git diff --cached --quiet; then staged_changes=1; else staged_changes=0; fi; \
+	    if ! git diff --quiet; then unstaged_changes=1; else unstaged_changes=0; fi; \
+	    if [ "$$untracked" -gt 0 ] || [ "$$staged_changes" -eq 1 ] || [ "$$unstaged_changes" -eq 1 ]; then \
+	      git add --all; \
+	      git commit -m "$(MSG)" || true; \
+	    else \
+	      echo "Sem mudanças para commitar em $$repo"; \
+	    fi; \
+	    git pull --rebase || (git rebase --abort || true); \
+	    if git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then \
+	      git push origin "$$branch" || true; \
+	    else \
+	      git push -u origin "$$branch" || true; \
+	    fi; \
+	    cd - >/dev/null 2>&1 || true; \
+	  else \
+	    echo "Pulando $$repo (não é repo git)"; \
+	  fi; \
+	done
+
+push-all-dry:
+	for repo in $(REPOS); do \
+	  echo "===== $$repo ====="; \
+	  echo "(dry) git add --all && git commit -m '$(MSG)' && git pull --rebase && git push"; \
+	done

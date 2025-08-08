@@ -41,6 +41,8 @@ services:
       - query_data:/app/data
     environment:
       - RUST_LOG=info
+    init: true
+    restart: unless-stopped
     networks:
       - askadb-network
 
@@ -62,7 +64,7 @@ services:
       context: ../askadb-ui
     container_name: askadb-ui
     ports:
-      - "5173:80"
+      - "3000:80"
     depends_on:
       - orchestrator-api
     networks:
