@@ -13,9 +13,11 @@ up:
 start:
 	$(DC) up
 
-# Derrubar todos os containers
+# Derrubar todos os containers do askadb (orquestrador central)
 down:
 	$(DC) down
+	docker stop $$(docker ps -q --filter "name=askadb") 2>/dev/null || true
+	docker rm $$(docker ps -aq --filter "name=askadb") 2>/dev/null || true
 
 # Rebuild dos containers
 rebuild:
@@ -25,21 +27,29 @@ rebuild:
 # DEBUG LOCAL (serviços individuais)
 # =============================================================================
 
-# Subir apenas orchestrator-api para debug
+# Subir apenas askadb-orchestrator-api para debug
 debug-orchestrator:
 	$(DC) up --build orchestrator-api
 
-# Subir apenas nl-query para debug
+# Subir apenas askadb-nl-query para debug
 debug-nl-query:
 	$(DC) up --build nl-query
 
-# Subir apenas query-engine para debug
+# Subir apenas askadb-query-engine para debug
 debug-query-engine:
 	$(DC) up --build query-engine
+
+# Subir apenas askadb-ui para debug
+debug-ui:
+	$(DC) up --build ui
 
 # Subir serviços backend (orchestrator + nl-query + query-engine) para debug
 debug-backend:
 	$(DC) up --build orchestrator-api nl-query query-engine
+
+# Subir frontend + backend para debug completo
+debug-full:
+	$(DC) up --build
 
 # =============================================================================
 # PRODUÇÃO
@@ -56,6 +66,8 @@ start-prod:
 # Derrubar serviços de produção
 down-prod:
 	$(DC) -f docker-compose.prod.yml down
+	docker stop $$(docker ps -q --filter "name=askadb") 2>/dev/null || true
+	docker rm $$(docker ps -aq --filter "name=askadb") 2>/dev/null || true
 
 # =============================================================================
 # UTILITÁRIOS
@@ -75,6 +87,9 @@ logs-nl-query:
 logs-query-engine:
 	$(DC) logs -f query-engine
 
+logs-ui:
+	$(DC) logs -f ui
+
 # Ver status dos containers
 ps:
 	docker ps
@@ -87,9 +102,11 @@ ps-askadb:
 clean:
 	docker system prune -f
 
-# Limpar apenas containers do askadb
+# Limpar apenas containers do askadb (orquestrador central)
 clean-askadb:
 	$(DC) down -v
+	docker stop $$(docker ps -q --filter "name=askadb") 2>/dev/null || true
+	docker rm $$(docker ps -aq --filter "name=askadb") 2>/dev/null || true
 	docker rmi $$(docker images -q askadb/*) 2>/dev/null || true
 
 # =============================================================================
@@ -100,16 +117,18 @@ help:
 	@echo "Comandos disponíveis:"
 	@echo ""
 	@echo "DESENVOLVIMENTO:"
-	@echo "  up              - Subir todos os serviços com build"
+	@echo "  up              - Subir todos os serviços com build (orquestrador central)"
 	@echo "  start           - Subir serviços sem rebuild"
-	@echo "  down            - Derrubar todos os containers"
+	@echo "  down            - Derrubar todos os containers do askadb (orquestrador central)"
 	@echo "  rebuild         - Rebuild dos containers"
 	@echo ""
 	@echo "DEBUG LOCAL:"
-	@echo "  debug-orchestrator  - Subir apenas orchestrator-api"
-	@echo "  debug-nl-query      - Subir apenas nl-query"
-	@echo "  debug-query-engine  - Subir apenas query-engine"
+	@echo "  debug-orchestrator  - Subir apenas askadb-orchestrator-api"
+	@echo "  debug-nl-query      - Subir apenas askadb-nl-query"
+	@echo "  debug-query-engine  - Subir apenas askadb-query-engine"
+	@echo "  debug-ui            - Subir apenas askadb-ui"
 	@echo "  debug-backend       - Subir backend completo (orchestrator + nl-query + query-engine)"
+	@echo "  debug-full          - Subir frontend + backend completo"
 	@echo ""
 	@echo "PRODUÇÃO:"
 	@echo "  up-prod         - Subir todos os serviços em modo produção"
@@ -118,13 +137,14 @@ help:
 	@echo ""
 	@echo "UTILITÁRIOS:"
 	@echo "  logs            - Ver logs em tempo real"
-	@echo "  logs-orchestrator - Ver logs do orchestrator-api"
-	@echo "  logs-nl-query   - Ver logs do nl-query"
-	@echo "  logs-query-engine - Ver logs do query-engine"
+	@echo "  logs-orchestrator - Ver logs do askadb-orchestrator-api"
+	@echo "  logs-nl-query   - Ver logs do askadb-nl-query"
+	@echo "  logs-query-engine - Ver logs do askadb-query-engine"
+	@echo "  logs-ui         - Ver logs do askadb-ui"
 	@echo "  ps              - Ver status dos containers"
 	@echo "  ps-askadb       - Ver status dos containers do askadb"
 	@echo "  clean           - Limpar containers parados, redes e volumes"
-	@echo "  clean-askadb    - Limpar apenas containers do askadb"
+	@echo "  clean-askadb    - Limpar apenas containers do askadb (orquestrador central)"
 	@echo ""
 	@echo "AJUDA:"
 	@echo "  help            - Mostrar esta ajuda"
