@@ -1,0 +1,47 @@
+services:
+  orchestrator-api:
+    build:
+      context: ../orchestrator-api
+      dockerfile: Dockerfile
+    container_name: askadb-orchestrator-api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - nl-query
+      - query-engine
+    environment:
+      - FASTAPI_ENV=production
+    restart: unless-stopped
+    networks:
+      - askadb-network
+
+  nl-query:
+    build:
+      context: ../nl-query
+      dockerfile: Dockerfile
+    container_name: askadb-nl-query
+    ports:
+      - "8001:8001"
+    environment:
+      - FASTAPI_ENV=production
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    restart: unless-stopped
+    networks:
+      - askadb-network
+
+  query-engine:
+    build:
+      context: ../query-engine
+      dockerfile: Dockerfile
+    container_name: askadb-query-engine
+    ports:
+      - "8002:8002"
+    volumes:
+      - ../query-engine/data:/app/data
+    restart: unless-stopped
+    networks:
+      - askadb-network
+
+networks:
+  askadb-network:
+    driver: bridge
