@@ -29,6 +29,22 @@ rebuild:
 	$(DC) down && $(DC) up --build
 
 # =============================================================================
+# DESENVOLVIMENTO
+# =============================================================================
+
+# Subir todos os serviços em modo desenvolvimento (UI com hot reload)
+up-dev:
+	$(DC) -f docker-compose.dev.yml up --build
+
+# Subir apenas a UI em modo desenvolvimento
+dev-ui:
+	$(DC) -f docker-compose.dev.yml up --build ui
+
+# Subir backend + UI em desenvolvimento
+dev-full:
+	$(DC) -f docker-compose.dev.yml up --build
+
+# =============================================================================
 # DEBUG LOCAL (serviços individuais)
 # =============================================================================
 
@@ -126,6 +142,11 @@ help:
 	@echo "  start           - Subir serviços sem rebuild"
 	@echo "  down            - Derrubar todos os containers do askadb (orquestrador central)"
 	@echo "  rebuild         - Rebuild dos containers"
+	@echo ""
+	@echo "DESENVOLVIMENTO COM HOT RELOAD:"
+	@echo "  up-dev          - Subir todos os serviços em modo desenvolvimento (UI com hot reload)"
+	@echo "  dev-ui          - Subir apenas a UI em modo desenvolvimento"
+	@echo "  dev-full        - Subir backend + UI em desenvolvimento"
 	@echo ""
 	@echo "DEBUG LOCAL:"
 	@echo "  debug-orchestrator  - Subir apenas askadb-orchestrator-api"
